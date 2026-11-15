@@ -1,0 +1,16 @@
+name: phyloresist
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - matplotlib
+  - scipy
+  - numpy
+  - jupyterlab
+  - seaborn
+  - scikit-learn
+  - pandas
+  - ipykernel
+  - biopython
+  - r-base
+  - r-mrmlm

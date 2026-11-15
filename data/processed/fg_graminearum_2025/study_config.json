@@ -1,0 +1,20 @@
+{
+  "study_id": "fg_graminearum_fungicide_study_2025",
+  "pathogen": "Fusarium graminearum",
+  "fungicides": [
+    "propiconazole",
+    "tebuconazole"
+  ],
+  "phenotype": {
+    "trait_name": "trait1",
+    "biological_interpretation": "isolate least-squares mean EC50",
+    "unit": "mM",
+    "replicate_count": 3,
+    "transformation": "none; supplied scale retained",
+    "resistance_threshold": null
+  },
+  "genotype_manifest": "genotype_input_manifest.json",
+  "phenotype_table": "phenotype_measurements.csv",
+  "isolate_manifest": "isolate_manifest.csv",
+  "interpretation_note": "Research intake only; this configuration does not define a susceptible/resistant cutoff."
+}

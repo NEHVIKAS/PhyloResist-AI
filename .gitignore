@@ -1,0 +1,50 @@
+# Python environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# Logs and temporary files
+*.log
+work/
+
+# Raw research datasets and reference files
+data/raw/
+data/reference/
+
+# Processed datasets: retain study configurations only
+data/processed/*
+!data/processed/*/
+data/processed/*/*
+!data/processed/*/study_config.json
+
+# Generated analysis outputs: retain Markdown reports
+results/*
+!results/reports/
+results/reports/*
+!results/reports/*.md
+
+# Generated audit files and archives
+project_audit/
+*.zip
+
+# Preserve geographic holdout report
+!results/geographic_holdout_validation/
+results/geographic_holdout_validation/*
+!results/geographic_holdout_validation/geographic_holdout_report.md
