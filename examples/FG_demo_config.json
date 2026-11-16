@@ -1,0 +1,21 @@
+{
+    "study_id": "FG_DEMO_2026",
+    "pathogen": "Fusarium graminearum",
+    "isolate_id_column": "isolate_id",
+    "phenotype_columns": [
+        "propiconazole_ec50",
+        "tebuconazole_ec50"
+    ],
+    "fungicides": [
+        "propiconazole",
+        "tebuconazole"
+    ],
+    "phenotype_unit": "mM",
+    "genotype_format": "VCF",
+    "reference_genome": null,
+    "population_column": null,
+    "metadata_columns": [
+        "country"
+    ],
+    "schema_version": "1.0"
+}
