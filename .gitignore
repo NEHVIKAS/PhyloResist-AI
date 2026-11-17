@@ -24,6 +24,9 @@ __pycache__/
 *.log
 work/
 
+# Local study registry
+data/registry/
+
 # Raw research datasets and reference files
 data/raw/
 data/reference/

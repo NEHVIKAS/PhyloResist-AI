@@ -29,7 +29,6 @@ def test_valid_replicates(valid_data):
 
 def test_mean_calculation(valid_data):
     result = summarize_replicates(valid_data)
-
     fg001 = result[result["isolate_id"] == "FG001"].iloc[0]
 
     assert fg001["mean_ec50"] == pytest.approx(0.45)
@@ -37,7 +36,6 @@ def test_mean_calculation(valid_data):
 
 def test_sd_calculation(valid_data):
     result = summarize_replicates(valid_data)
-
     fg001 = result[result["isolate_id"] == "FG001"].iloc[0]
 
     assert fg001["sd_ec50"] == pytest.approx(0.03)
@@ -45,7 +43,6 @@ def test_sd_calculation(valid_data):
 
 def test_cv_calculation(valid_data):
     result = summarize_replicates(valid_data)
-
     fg001 = result[result["isolate_id"] == "FG001"].iloc[0]
 
     expected_cv = (0.03 / 0.45) * 100
@@ -56,7 +53,7 @@ def test_cv_calculation(valid_data):
 def test_incomplete_replicates():
     data = pd.DataFrame({
         "isolate_id": ["FG001", "FG001"],
-        "fungicide": ["propiconazole", "propiconazole"],
+        "fungicide": ["propiconazole"] * 2,
         "replicate": [1, 2],
         "ec50": [0.42, 0.45],
     })
@@ -67,9 +64,26 @@ def test_incomplete_replicates():
     assert result.iloc[0]["requires_review"]
 
 
+def test_unexpected_replicates_trigger_review():
+    data = pd.DataFrame({
+        "isolate_id": ["FG001"] * 4,
+        "fungicide": ["propiconazole"] * 4,
+        "replicate": [1, 2, 3, 4],
+        "ec50": [0.42, 0.45, 0.48, 0.50],
+    })
+
+    result = summarize_replicates(data)
+    group = result.iloc[0]
+
+    assert group["unexpected_replicates"]
+    assert group["unexpected_replicate_count"] == 1
+    assert group["observation_count"] == 4
+    assert group["requires_review"]
+
+
 def test_missing_measurement():
     data = pd.DataFrame({
-        "isolate_id": ["FG001", "FG001", "FG001"],
+        "isolate_id": ["FG001"] * 3,
         "fungicide": ["propiconazole"] * 3,
         "replicate": [1, 2, 3],
         "ec50": [0.42, None, 0.48],
@@ -84,7 +98,7 @@ def test_missing_measurement():
 
 def test_non_numeric_measurement():
     data = pd.DataFrame({
-        "isolate_id": ["FG001", "FG001", "FG001"],
+        "isolate_id": ["FG001"] * 3,
         "fungicide": ["propiconazole"] * 3,
         "replicate": [1, 2, 3],
         "ec50": [0.42, "invalid", 0.48],
@@ -98,7 +112,7 @@ def test_non_numeric_measurement():
 
 def test_zero_and_negative_measurements():
     data = pd.DataFrame({
-        "isolate_id": ["FG001", "FG001", "FG001"],
+        "isolate_id": ["FG001"] * 3,
         "fungicide": ["propiconazole"] * 3,
         "replicate": [1, 2, 3],
         "ec50": [0.42, 0, -0.5],
@@ -112,16 +126,13 @@ def test_zero_and_negative_measurements():
 
 def test_high_variability_flag():
     data = pd.DataFrame({
-        "isolate_id": ["FG001", "FG001", "FG001"],
+        "isolate_id": ["FG001"] * 3,
         "fungicide": ["propiconazole"] * 3,
         "replicate": [1, 2, 3],
         "ec50": [0.2, 0.5, 1.0],
     })
 
-    result = summarize_replicates(
-        data,
-        max_cv_percent=20,
-    )
+    result = summarize_replicates(data, max_cv_percent=20)
 
     assert result.iloc[0]["high_variability"]
     assert result.iloc[0]["requires_review"]
@@ -136,7 +147,7 @@ def test_no_variability_flag_without_threshold(valid_data):
 def test_duplicate_replicate_identifiers():
     data = pd.DataFrame({
         "isolate_id": ["FG001", "FG001"],
-        "fungicide": ["propiconazole", "propiconazole"],
+        "fungicide": ["propiconazole"] * 2,
         "replicate": [1, 1],
         "ec50": [0.42, 0.45],
     })
@@ -154,18 +165,12 @@ def test_missing_required_column(valid_data):
 
 def test_invalid_expected_replicates(valid_data):
     with pytest.raises(ValueError):
-        summarize_replicates(
-            valid_data,
-            expected_replicates=0,
-        )
+        summarize_replicates(valid_data, expected_replicates=0)
 
 
 def test_invalid_cv_threshold(valid_data):
     with pytest.raises(ValueError):
-        summarize_replicates(
-            valid_data,
-            max_cv_percent=-5,
-        )
+        summarize_replicates(valid_data, max_cv_percent=-5)
 
 
 def test_original_data_is_not_modified(valid_data):
@@ -179,8 +184,10 @@ def test_original_data_is_not_modified(valid_data):
 def test_multiple_fungicides():
     data = pd.DataFrame({
         "isolate_id": ["FG001"] * 6,
-        "fungicide": [
-            "propiconazole"] * 3 + ["tebuconazole"] * 3,
+        "fungicide": (
+            ["propiconazole"] * 3
+            + ["tebuconazole"] * 3
+        ),
         "replicate": [1, 2, 3, 1, 2, 3],
         "ec50": [0.42, 0.45, 0.48, 0.30, 0.32, 0.34],
     })

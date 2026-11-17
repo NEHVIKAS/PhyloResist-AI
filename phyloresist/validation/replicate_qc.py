@@ -16,12 +16,11 @@ def summarize_replicates(
     """
     Summarize raw EC50 replicates by isolate and fungicide.
 
-    Invalid and missing observations are reported, not silently removed
-    from the input data. Only valid positive finite values contribute
-    to descriptive statistics.
+    Invalid and missing observations are reported, not silently removed.
+    Only valid positive finite values contribute to descriptive statistics.
 
-    A CV threshold is optional. No observations are automatically
-    excluded based on variability.
+    Groups with fewer or more observations than expected require review.
+    Additional observations are flagged, not automatically rejected.
     """
 
     if not isinstance(data, pd.DataFrame):
@@ -55,7 +54,9 @@ def summarize_replicates(
         or not isinstance(expected_replicates, int)
         or expected_replicates < 1
     ):
-        raise ValueError("expected_replicates must be a positive integer.")
+        raise ValueError(
+            "expected_replicates must be a positive integer."
+        )
 
     if max_cv_percent is not None:
         if (
@@ -65,7 +66,8 @@ def summarize_replicates(
             or max_cv_percent < 0
         ):
             raise ValueError(
-                "max_cv_percent must be None or a non-negative finite number."
+                "max_cv_percent must be None or a "
+                "non-negative finite number."
             )
 
     working = data[required_columns].copy()
@@ -78,22 +80,33 @@ def summarize_replicates(
         )
 
     if working[replicate_col].isna().any():
-        raise ValueError("Replicate identifiers cannot be missing.")
+        raise ValueError(
+            "Replicate identifiers cannot be missing."
+        )
 
     duplicate_mask = working.duplicated(
-        subset=[isolate_col, fungicide_col, replicate_col],
+        subset=[
+            isolate_col,
+            fungicide_col,
+            replicate_col,
+        ],
         keep=False,
     )
 
     if duplicate_mask.any():
         duplicates = working.loc[
             duplicate_mask,
-            [isolate_col, fungicide_col, replicate_col],
+            [
+                isolate_col,
+                fungicide_col,
+                replicate_col,
+            ],
         ]
 
         raise ValueError(
-            "Duplicate replicate identifiers found within isolate/fungicide "
-            f"groups:\n{duplicates.to_string(index=False)}"
+            "Duplicate replicate identifiers found within "
+            "isolate/fungicide groups:\n"
+            f"{duplicates.to_string(index=False)}"
         )
 
     numeric_values = pd.to_numeric(
@@ -102,11 +115,17 @@ def summarize_replicates(
     )
 
     missing_mask = working[value_col].isna()
-    invalid_mask = numeric_values.isna() & ~missing_mask
+
+    invalid_mask = (
+        numeric_values.isna()
+        & ~missing_mask
+    )
+
     non_finite_mask = (
         numeric_values.notna()
         & ~np.isfinite(numeric_values)
     )
+
     non_positive_mask = (
         numeric_values.notna()
         & np.isfinite(numeric_values)
@@ -122,7 +141,9 @@ def summarize_replicates(
     working["_numeric_ec50"] = numeric_values
     working["_is_missing"] = missing_mask
     working["_is_invalid"] = (
-        invalid_mask | non_finite_mask | non_positive_mask
+        invalid_mask
+        | non_finite_mask
+        | non_positive_mask
     )
     working["_is_valid"] = valid_mask
 
@@ -142,17 +163,25 @@ def summarize_replicates(
 
         total_count = len(group)
         valid_count = len(valid_values)
-        missing_count = int(group["_is_missing"].sum())
-        invalid_count = int(group["_is_invalid"].sum())
+
+        missing_count = int(
+            group["_is_missing"].sum()
+        )
+
+        invalid_count = int(
+            group["_is_invalid"].sum()
+        )
 
         mean_value = (
             float(valid_values.mean())
-            if valid_count > 0 else None
+            if valid_count > 0
+            else None
         )
 
         sd_value = (
             float(valid_values.std(ddof=1))
-            if valid_count >= 2 else None
+            if valid_count >= 2
+            else None
         )
 
         cv_percent = (
@@ -161,7 +190,18 @@ def summarize_replicates(
             else None
         )
 
-        incomplete = valid_count < expected_replicates
+        incomplete = (
+            valid_count < expected_replicates
+        )
+
+        unexpected_count = max(
+            total_count - expected_replicates,
+            0,
+        )
+
+        unexpected_replicates = (
+            unexpected_count > 0
+        )
 
         high_variability = (
             max_cv_percent is not None
@@ -171,6 +211,7 @@ def summarize_replicates(
 
         requires_review = (
             incomplete
+            or unexpected_replicates
             or missing_count > 0
             or invalid_count > 0
             or high_variability
@@ -188,6 +229,12 @@ def summarize_replicates(
             "sd_ec50": sd_value,
             "cv_percent": cv_percent,
             "incomplete_replicates": bool(incomplete),
+            "unexpected_replicates": bool(
+                unexpected_replicates
+            ),
+            "unexpected_replicate_count": int(
+                unexpected_count
+            ),
             "high_variability": bool(high_variability),
             "requires_review": bool(requires_review),
         })

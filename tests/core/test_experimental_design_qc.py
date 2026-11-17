@@ -241,3 +241,35 @@ def test_negative_concentration(valid_experiment):
 
     assert result.iloc[0]["invalid_concentration_count"] == 1
     assert result.iloc[0]["requires_review"]
+
+def test_missing_concentration(valid_experiment):
+    data = valid_experiment.copy()
+    data.loc[0, "concentration"] = None
+
+    result = audit_dose_response_design(data)
+
+    assert result.iloc[0]["missing_concentration_count"] == 1
+    assert result.iloc[0]["invalid_concentration_count"] == 0
+    assert result.iloc[0]["requires_review"]
+
+
+def test_invalid_concentration(valid_experiment):
+    data = valid_experiment.copy()
+    data["concentration"] = data["concentration"].astype(object)
+    data.loc[0, "concentration"] = "invalid"
+
+    result = audit_dose_response_design(data)
+
+    assert result.iloc[0]["invalid_concentration_count"] == 1
+    assert result.iloc[0]["missing_concentration_count"] == 0
+    assert result.iloc[0]["requires_review"]
+
+
+def test_negative_concentration(valid_experiment):
+    data = valid_experiment.copy()
+    data.loc[0, "concentration"] = -1
+
+    result = audit_dose_response_design(data)
+
+    assert result.iloc[0]["invalid_concentration_count"] == 1
+    assert result.iloc[0]["requires_review"]
